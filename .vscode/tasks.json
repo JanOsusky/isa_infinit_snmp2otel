@@ -1,0 +1,25 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build snmp2otel", 
+            "type": "shell",
+            "command": "make",
+            "args": ["-C", "${workspaceFolder}"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "Build project using Makefile"
+        },
+        {
+            "label": "Clean snmp2otel",
+            "type": "shell",
+            "command": "make",
+            "args": ["-C", "${workspaceFolder}", "clean"],
+            "group": "none",
+            "problemMatcher": []
+        }
+    ]
+}
