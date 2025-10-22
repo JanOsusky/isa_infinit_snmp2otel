@@ -12,7 +12,7 @@ OTELExporter::OTELExporter(const std::string &endpoint, bool verbose)
 bool OTELExporter::parse_endpoint(const std::string &endpoint, std::string &host, int &port, std::string &path) {
     // support: http://host:port/path
     if (endpoint.rfind("http://",0) != 0) {
-        if (verbose_) std::cerr << "[WARN] Only http:// endpoints supported in this implementation\n";
+        if (verbose_) std::cout << "[WARN] Only http:// endpoints supported in this implementation\n";
         return false;
     }
     size_t p = 7;
@@ -104,6 +104,7 @@ bool OTELExporter::export_gauge(const std::map<std::string, SNMPValue> &values,
     }
     body << "] } ] } ] }";
     std::string host; int port; std::string path;
+    std::cerr << body.str() << std::endl;
     if (!parse_endpoint(endpoint_, host, port, path)) {
         if (verbose_) std::cerr << "[ERROR] Unsupported endpoint format\n";
         return false;
@@ -112,7 +113,7 @@ bool OTELExporter::export_gauge(const std::map<std::string, SNMPValue> &values,
     if (!ok) {
         if (verbose_) std::cerr << "[ERROR] OTEL export failed for endpoint " << endpoint_ << "\n";
     } else {
-        if (verbose_) std::cerr << "[INFO] OTEL export succeeded, sent " << values.size() << " metrics\n";
+        if (verbose_) std::cout << "[INFO] OTEL export succeeded, sent " << values.size() << " metrics\n";
     }
     return ok;
 }

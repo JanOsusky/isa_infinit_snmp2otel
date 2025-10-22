@@ -58,15 +58,18 @@ int main(int argc, char **argv) {
     OTELExporter exporter(endpoint, verbose);
 
     while (g_run) {
-        if (verbose) std::cerr << "[INFO] Starting poll cycle\n";
+        if (verbose) std::cout << "[INFO] Starting poll cycle\n";
         auto values = client.get(oids);
         if (!values.empty()) {
+            for (const auto& [oid, val] : values) {
+                std::cout << oid << " = " << val.strVal << std::endl;
+            }
             exporter.export_gauge(values, mapping);
         } else {
-            if (verbose) std::cerr << "[WARN] No values returned in this cycle\n";
+            if (verbose) std::cout << "[WARNING] No values returned in this cycle\n";
         }
         for (int i=0;i<interval && g_run;++i) std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    if (verbose) std::cerr << "[INFO] Exiting\n";
+    if (verbose) std::cout << "[INFO] Exiting\n";
     return 0;
 }

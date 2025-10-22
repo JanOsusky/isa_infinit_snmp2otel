@@ -7,14 +7,14 @@
             "request": "launch",
             "program": "${workspaceFolder}/snmp2otel",
             "args": [
-                "-t", "147.229.176.19",
-                "-C", "public",
+                "-t", "127.0.0.1",
+                "-C", "sim_data",
                 "-o", "oids.txt",
                 "-e", "http://localhost:4318/v1/metrics",
                 "-i", "10",
                 "-r", "2",
                 "-T", "3",
-                "-p", "161",
+                "-p", "1024",
                 "-v"
             ],
             "cwd": "${workspaceFolder}",

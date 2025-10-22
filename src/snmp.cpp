@@ -309,6 +309,8 @@ std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> 
                 return out;
             } else continue;
         }
+        std::cout << std::endl;
+        bool dec = ber_decode_response(resp, out);
         bool dec = ber_decode_response(resp, out);
         if (!dec) {
             if (verbose_) std::cerr << "[ERROR] Failed to parse SNMP response\n";
