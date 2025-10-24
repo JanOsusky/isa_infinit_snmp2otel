@@ -27,6 +27,15 @@ private:
     int retries_;
     bool verbose_;
 
+    struct snmp_session session_, *ss_;
+    struct snmp_pdu *pdu_;
+    struct snmp_pdu *response_;
+           
+    oid anOID[MAX_OID_LEN];
+    size_t anOID_len = MAX_OID_LEN;
+   
+
+   int status;
     // helpers for BER encoding/decoding
     static std::vector<uint8_t> ber_encode_get_request(int request_id,
             const std::string &community, const std::vector<std::string> &oids);
@@ -34,4 +43,6 @@ private:
 
     // low-level UDP send/recv
     bool send_and_receive(const std::vector<uint8_t> &packet, std::vector<uint8_t> &response);
+
+    static void init_net_snmp()
 };

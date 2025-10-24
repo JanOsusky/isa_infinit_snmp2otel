@@ -8,6 +8,10 @@
 #include <random>
 #include <sstream>
 #include "utils.hpp"
+#include <iomanip>
+#include <vector>
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
 
 // Helper functions for BER minimal encoding
 static void append_len(std::vector<uint8_t>& out, size_t len) {
@@ -245,9 +249,18 @@ bool SNMPClient::ber_decode_response(const std::vector<uint8_t> &resp, std::map<
 SNMPClient::SNMPClient(const std::string &target, int port, const std::string &community,
                        int timeout_ms, int retries, bool verbose)
 : target_(target), port_(port), community_(community),
-  timeout_ms_(timeout_ms), retries_(retries), verbose_(verbose) {}
+  timeout_ms_(timeout_ms), retries_(retries), verbose_(verbose) {
+    // Initialize the Net-SNMP library
+    init_net_snmp();
+  }
 
 SNMPClient::~SNMPClient() {}
+
+void init_net_snmp() {
+    init_snmp("snmp2otel");
+    snmp_sess_init(&session_);
+
+}
 
 bool SNMPClient::send_and_receive(const std::vector<uint8_t> &packet, std::vector<uint8_t> &response) {
     struct addrinfo hints{}, *res=nullptr;
@@ -311,7 +324,17 @@ std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> 
         }
         std::cout << std::endl;
         bool dec = ber_decode_response(resp, out);
-        bool dec = ber_decode_response(resp, out);
+        for (uint8_t val : resp) {
+            std::cout << static_cast<int>(val) << " ";
+        }
+        for (size_t i = 0; i < resp.size(); ++i) {
+            if (i % 16 == 0) std::cout << std::endl; // new line every 16 bytes
+            std::cout << std::setw(2) << std::setfill('0') 
+                  << std::hex << std::uppercase 
+                  << static_cast<int>(resp[i]) << " ";
+        }
+        std::cout << std::dec << std::endl; // reset formatting
+        std::cout << std::endl;
         if (!dec) {
             if (verbose_) std::cerr << "[ERROR] Failed to parse SNMP response\n";
         }
