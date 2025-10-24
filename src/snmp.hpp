@@ -2,6 +2,10 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+
+
 
 struct SNMPValue {
     // support two simple types: INTEGER (as int64) and OCTET STRING (as string)
@@ -31,7 +35,7 @@ private:
     struct snmp_pdu *pdu_;
     struct snmp_pdu *response_;
            
-    oid anOID[MAX_OID_LEN];
+    oid anOID[MAX_OID_LEN]; // TODO: redefine, quick error fix
     size_t anOID_len = MAX_OID_LEN;
    
 
@@ -44,5 +48,5 @@ private:
     // low-level UDP send/recv
     bool send_and_receive(const std::vector<uint8_t> &packet, std::vector<uint8_t> &response);
 
-    static void init_net_snmp()
+    void init_net_snmp();
 };

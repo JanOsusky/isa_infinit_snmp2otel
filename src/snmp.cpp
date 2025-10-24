@@ -256,9 +256,11 @@ SNMPClient::SNMPClient(const std::string &target, int port, const std::string &c
 
 SNMPClient::~SNMPClient() {}
 
-void init_net_snmp() {
+void SNMPClient::init_net_snmp() {
     init_snmp("snmp2otel");
     snmp_sess_init(&session_);
+
+
 
 }
 
