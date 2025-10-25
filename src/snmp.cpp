@@ -13,6 +13,60 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
+SNMPClient::SNMPClient(const std::string &target, int port, const std::string &community,
+                       int timeout_ms, int retries, bool verbose)
+: target_(target), port_(port), community_(community),
+  timeout_ms_(timeout_ms), retries_(retries), verbose_(verbose) {
+    // Initialize the Net-SNMP library
+    init_net_snmp();
+  }
+
+SNMPClient::~SNMPClient() {}
+
+void SNMPClient::init_net_snmp() {
+    init_snmp("snmp2otel");
+    snmp_sess_init(&session_);
+    session_.version = SNMP_VERSION_2c;
+    session_.community = (u_char*)community_.c_str();
+    session_.community_len = community_.length();
+}
+
+std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> &oids) {
+    std::map<std::string, SNMPValue> out;
+    
+    // retry loop
+    for (int attempt=0; attempt<=retries_; ++attempt) {
+        std::vector<uint8_t> resp;
+        if (verbose_) std::cerr << "[INFO] SNMP GET attempt " << attempt+1 << " to " << target_ << ":" << port_ << "\n";
+        bool ok = send_and_receive(pkt, resp);
+        if (!ok) {
+            if (attempt == retries_) {
+                if (verbose_) std::cerr << "[ERROR] SNMP request failed after retries\n";
+                return out;
+            } else continue;
+        }
+        std::cout << std::endl;
+        bool dec = ber_decode_response(resp, out);
+        for (uint8_t val : resp) {
+            std::cout << static_cast<int>(val) << " ";
+        }
+        for (size_t i = 0; i < resp.size(); ++i) {
+            if (i % 16 == 0) std::cout << std::endl; // new line every 16 bytes
+            std::cout << std::setw(2) << std::setfill('0') 
+                  << std::hex << std::uppercase 
+                  << static_cast<int>(resp[i]) << " ";
+        }
+        std::cout << std::dec << std::endl; // reset formatting
+        std::cout << std::endl;
+        if (!dec) {
+            if (verbose_) std::cerr << "[ERROR] Failed to parse SNMP response\n";
+        }
+        return out;
+    }
+    return out;
+}
+
+
 // Helper functions for BER minimal encoding
 static void append_len(std::vector<uint8_t>& out, size_t len) {
     if (len < 128) out.push_back((uint8_t)len);
@@ -246,23 +300,7 @@ bool SNMPClient::ber_decode_response(const std::vector<uint8_t> &resp, std::map<
     return true;
 }
 
-SNMPClient::SNMPClient(const std::string &target, int port, const std::string &community,
-                       int timeout_ms, int retries, bool verbose)
-: target_(target), port_(port), community_(community),
-  timeout_ms_(timeout_ms), retries_(retries), verbose_(verbose) {
-    // Initialize the Net-SNMP library
-    init_net_snmp();
-  }
 
-SNMPClient::~SNMPClient() {}
-
-void SNMPClient::init_net_snmp() {
-    init_snmp("snmp2otel");
-    snmp_sess_init(&session_);
-
-
-
-}
 
 bool SNMPClient::send_and_receive(const std::vector<uint8_t> &packet, std::vector<uint8_t> &response) {
     struct addrinfo hints{}, *res=nullptr;
@@ -307,40 +345,3 @@ bool SNMPClient::send_and_receive(const std::vector<uint8_t> &packet, std::vecto
     return true;
 }
 
-std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> &oids) {
-    std::map<std::string, SNMPValue> out;
-    // build packet
-    static std::mt19937 rng((unsigned)time(nullptr));
-    int reqid = rng();
-    auto pkt = ber_encode_get_request(reqid, community_, oids);
-    // retry loop
-    for (int attempt=0; attempt<=retries_; ++attempt) {
-        std::vector<uint8_t> resp;
-        if (verbose_) std::cerr << "[INFO] SNMP GET attempt " << attempt+1 << " to " << target_ << ":" << port_ << "\n";
-        bool ok = send_and_receive(pkt, resp);
-        if (!ok) {
-            if (attempt == retries_) {
-                if (verbose_) std::cerr << "[ERROR] SNMP request failed after retries\n";
-                return out;
-            } else continue;
-        }
-        std::cout << std::endl;
-        bool dec = ber_decode_response(resp, out);
-        for (uint8_t val : resp) {
-            std::cout << static_cast<int>(val) << " ";
-        }
-        for (size_t i = 0; i < resp.size(); ++i) {
-            if (i % 16 == 0) std::cout << std::endl; // new line every 16 bytes
-            std::cout << std::setw(2) << std::setfill('0') 
-                  << std::hex << std::uppercase 
-                  << static_cast<int>(resp[i]) << " ";
-        }
-        std::cout << std::dec << std::endl; // reset formatting
-        std::cout << std::endl;
-        if (!dec) {
-            if (verbose_) std::cerr << "[ERROR] Failed to parse SNMP response\n";
-        }
-        return out;
-    }
-    return out;
-}
