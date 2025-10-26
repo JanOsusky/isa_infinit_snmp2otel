@@ -46,7 +46,8 @@ std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> 
 
     for (auto oid : oids) {
         if(oid.size() >= 2 && oid.substr(oid.size() - 2) == ".0") {
-
+            read_objid(oid.c_str(), anOID, &anOID_len);
+            
         } else {
             std::cerr << "[ERROR] OID: " << oid << " is not supported. Only scalar OID ending with .0 are.\n"; 
         }

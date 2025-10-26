@@ -1,1 +1,2 @@
 1: najit dokumentaci net snmp
+2: projit nastave snmp
