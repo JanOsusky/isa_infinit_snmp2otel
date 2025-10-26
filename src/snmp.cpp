@@ -26,15 +26,33 @@ SNMPClient::~SNMPClient() {}
 void SNMPClient::init_net_snmp() {
     init_snmp("snmp2otel");
     snmp_sess_init(&session_);
+    session_.peername = strdup((target_ + ":" + std::to_string(port_)).c_str());
     session_.version = SNMP_VERSION_2c;
     session_.community = (u_char*)community_.c_str();
     session_.community_len = community_.length();
+    session_.retries = retries_;
+    session_.timeout = timeout_ms_ * 1000; // should be in qu
 }
 
 std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> &oids) {
     std::map<std::string, SNMPValue> out;
     
-    // retry loop
+    ss_ = snmp_open(&session_); 
+    if (!ss_) {
+        snmp_perror("[ERROR] SNMP session could not be opened\n");
+        return;
+    }
+    pdu_ = snmp_pdu_create(SNMP_MSG_GET); // Creating pdu for Get request
+
+    for (auto oid : oids) {
+        if(oid.size() >= 2 && oid.substr(oid.size() - 2) == ".0") {
+
+        } else {
+            std::cerr << "[ERROR] OID: " << oid << " is not supported. Only scalar OID ending with .0 are.\n"; 
+        }
+    }
+
+   /* // retry loop
     for (int attempt=0; attempt<=retries_; ++attempt) {
         std::vector<uint8_t> resp;
         if (verbose_) std::cerr << "[INFO] SNMP GET attempt " << attempt+1 << " to " << target_ << ":" << port_ << "\n";
@@ -64,6 +82,7 @@ std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> 
         return out;
     }
     return out;
+    */
 }
 
 

@@ -14,7 +14,7 @@ $(TARGET): $(SRCS)
 run: all
 	./$(TARGET)
 
-test: $(SRC_DIR)/tests.cpp snmp2otel
+test: $(SRC_DIR)/test/test_snmp.cpp snmp2otel
 	$(CXX) $(CXXFLAGS) $(SRC_DIR)/tests.cpp $(SRC_DIR)/snmp.cpp $(SRC_DIR)/utils.cpp -o run_tests $(LDFLAGS)
 	./run_tests
 

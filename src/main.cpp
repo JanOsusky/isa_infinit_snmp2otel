@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     if (interval <= 0) interval = 10;
     signal(SIGINT, sigint_handler);
 
-    auto oids = load_oids_file(oids_file);
+    std::vector<std::string>  oids = load_oids_file(oids_file);
     if (oids.empty()) {
         std::cerr << "[ERROR] No OIDs loaded from " << oids_file << "\n";
         return 1;
