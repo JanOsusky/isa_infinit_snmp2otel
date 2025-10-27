@@ -34,12 +34,12 @@ private:
     struct snmp_session session_, *ss_;
     struct snmp_pdu *pdu_;
     struct snmp_pdu *response_;
+    struct variable_list *vars_;
            
-    oid anOID[MAX_OID_LEN]; // TODO: redefine, quick error fix
-    size_t anOID_len = MAX_OID_LEN;
+    oid anOID_[MAX_OID_LEN]; // TODO: redefine, quick error fix
+    size_t anOID_len_ = MAX_OID_LEN;
    
-
-   int status;
+   int status_;
     // helpers for BER encoding/decoding
     static std::vector<uint8_t> ber_encode_get_request(int request_id,
             const std::string &community, const std::vector<std::string> &oids);
