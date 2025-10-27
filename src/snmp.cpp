@@ -45,13 +45,15 @@ std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> 
     pdu_ = snmp_pdu_create(SNMP_MSG_GET); // Creating pdu for Get request
 
     for (auto oid : oids) {
-        if(oid.size() >= 2 && oid.substr(oid.size() - 2) == ".0") { // Filtering all non-scalar OIDs out
+        anOID_len_ = MAX_OID_LEN;
+        if (oid.size() >= 2 && oid.substr(oid.size() - 2) == ".0") { // Filtering all non-scalar OIDs out
             if(!read_objid(oid.c_str(), anOID_, &anOID_len_)){
                 std::cerr << "[ERROR] Failed to convert OID: " << oid << std::endl;
-            }
+                continue;
+            } 
             if(!snmp_add_null_var(pdu_, anOID_,anOID_len_)){
                 std::cerr << "[ERROR] Failed to add OID " << oid << " to the PDU.\n";
-            }
+            } 
         } else {
             std::cerr << "[ERROR] OID: " << oid << " is not supported. Only scalar OID ending with .0 are.\n"; 
         }
@@ -63,6 +65,9 @@ std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> 
         std::cout << "[INFO] Succesfully send SNMP request.\n";
         for(vars_ = response_->variables; vars_; vars_= vars_->next_variable)
             print_variable(vars_->name, vars_->name_length, vars_);
+        
+        std::cout << response_->variables->name << std::endl;
+        std::cout << response_->variables->data << std::endl;
         return out; // TODO: test only
     }
     return out; // TODO: test only
