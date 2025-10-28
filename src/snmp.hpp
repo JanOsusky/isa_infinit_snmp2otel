@@ -12,6 +12,8 @@ struct SNMPValue {
     bool isInt;
     int64_t intVal;
     std::string strVal;
+     //std::string name;
+    //int value; 
 };
 
 class SNMPClient {

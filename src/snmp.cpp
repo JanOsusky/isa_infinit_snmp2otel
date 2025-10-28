@@ -31,7 +31,7 @@ void SNMPClient::init_net_snmp() {
     session_.community = (u_char*)community_.c_str();
     session_.community_len = community_.length();
     session_.retries = retries_;
-    session_.timeout = timeout_ms_ * 1000; // should be in qu
+    session_.timeout = timeout_ms_ * 1000; // Should be in qs
 }
 
 std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> &oids) {
@@ -42,7 +42,7 @@ std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> 
         snmp_perror("[ERROR] SNMP session could not be opened\n");
         return out; // TODO: verify
     }
-    pdu_ = snmp_pdu_create(SNMP_MSG_GET); // Creating pdu for Get request
+    pdu_ = snmp_pdu_create(SNMP_MSG_GET); // Creating pdu for get request
 
     for (auto oid : oids) {
         anOID_len_ = MAX_OID_LEN;
@@ -55,19 +55,26 @@ std::map<std::string, SNMPValue> SNMPClient::get(const std::vector<std::string> 
                 std::cerr << "[ERROR] Failed to add OID " << oid << " to the PDU.\n";
             } 
         } else {
-            std::cerr << "[ERROR] OID: " << oid << " is not supported. Only scalar OID ending with .0 are.\n"; 
+            std::cerr << "[WARNING] OID: " << oid << " is not supported. Only scalar OID ending with .0 are.\n"; 
         }
     }
     // Send the request out
     status_ = snmp_synch_response(ss_, pdu_,  &response_);
 
     if (status_ == STAT_SUCCESS && response_->errstat == SNMP_ERR_NOERROR) { 
-        std::cout << "[INFO] Succesfully send SNMP request.\n";
-        for(vars_ = response_->variables; vars_; vars_= vars_->next_variable)
-            print_variable(vars_->name, vars_->name_length, vars_);
-        
-        std::cout << response_->variables->name << std::endl;
-        std::cout << response_->variables->data << std::endl;
+
+        for (vars_ = response_->variables; vars_; vars_ = vars_->next_variable) {
+           
+            if(vars_->type == ASN_GAUGE)
+            {
+            char buf[1024];
+            snprint_objid(buf, sizeof(buf), vars_->name, vars_->name_length);
+            std::cout << buf << " = " << *vars_->val.integer << "\n";
+            std::cout << *vars_->name << "!\n" ;
+            } else {
+                std::cerr << "[WARNING] The OID " << vars_->name << " is not of type GAUGE. Other types are not supported.\n";
+            }
+        }
         return out; // TODO: test only
     }
     return out; // TODO: test only
