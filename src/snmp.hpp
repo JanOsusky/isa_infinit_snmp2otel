@@ -16,6 +16,12 @@ struct SNMPValue {
     //int value; 
 };
 
+struct SNMPResult {
+    std::string name;
+    std::string oid;
+    int value;
+};
+
 class SNMPClient {
 public:
     SNMPClient(const std::string &target, int port, const std::string &community,
@@ -23,7 +29,7 @@ public:
     ~SNMPClient();
     // Performs a GET for a list of scalar OIDs (e.g. "1.3.6.1.2.1.1.3.0")
     // returns map oid -> SNMPValue for values successfully decoded
-    std::map<std::string, SNMPValue> get(const std::vector<std::string> &oids);
+    std::map<std::string, SNMPResult> get(const std::vector<std::string> &oids);
 
 private:
     std::string target_;

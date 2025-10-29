@@ -6,6 +6,7 @@
 #include <iostream>
 
 
+
 std::vector<std::string> load_oids_file(const std::string &path) {
     std::vector<std::string> oids;
     std::ifstream f(path);
@@ -41,4 +42,15 @@ std::string oid_to_name(const std::string &oid, const std::map<std::string, OIDI
     auto it = mapping.find(oid);
     if (it != mapping.end() && !it->second.name.empty()) return it->second.name;
     return "snmp." + oid;
+}
+
+
+std::string getOIDtoString(netsnmp_variable_list * vars) {
+    std::string oid;
+    for(size_t i = 0; i < vars->name_length; i++)
+    {
+        if (i>0) oid += ".";
+        oid += std::to_string(vars->name[i]);
+    }
+    return oid;
 }

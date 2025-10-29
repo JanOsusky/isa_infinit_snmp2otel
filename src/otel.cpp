@@ -12,7 +12,7 @@ OTELExporter::OTELExporter(const std::string &endpoint, bool verbose)
 bool OTELExporter::parse_endpoint(const std::string &endpoint, std::string &host, int &port, std::string &path) {
     // support: http://host:port/path
     if (endpoint.rfind("http://",0) != 0) {
-        if (verbose_) std::cout << "[WARN] Only http:// endpoints supported in this implementation\n";
+        if (verbose_) std::cout << "[WARNING] Only http:// endpoints supported in this implementation\n";
         return false;
     }
     size_t p = 7;
@@ -73,7 +73,7 @@ bool OTELExporter::http_post(const std::string &host, int port, const std::strin
     return false;
 }
 
-bool OTELExporter::export_gauge(const std::map<std::string, SNMPValue> &values,
+bool OTELExporter::export_gauge(const std::map<std::string, SNMPResult> &values,
                                 const std::map<std::string, OIDInfo> &mapping) {
     // Build OTLP/HTTP JSON (minimal)
     uint64_t ts = now_unix_nano();
@@ -82,19 +82,19 @@ bool OTELExporter::export_gauge(const std::map<std::string, SNMPValue> &values,
     bool firstMetric = true;
     for (const auto &kv : values) {
         std::string oid = kv.first;
-        const SNMPValue &v = kv.second;
+        const SNMPResult &v = kv.second;
         std::string name = oid_to_name(oid, mapping);
         if (!firstMetric) body << ", ";
         firstMetric = false;
         body << "{ \"name\": \"" << name << "\", \"unit\": \"\", \"gauge\": { \"dataPoints\": [ {";
-        if (v.isInt) {
-            body << "\"asInt\": " << v.intVal << ", ";
+        if (v.value) {
+            body << "\"asInt\": " << v.value << ", ";
         } else {
             // try to interpret string as number
             long long maybe = 0;
             bool isnum = true;
             try {
-                maybe = std::stoll(v.strVal);
+                
             } catch (...) { isnum = false; }
             if (isnum) body << "\"asInt\": " << maybe << ", ";
             else body << "\"asDouble\": 0, ";

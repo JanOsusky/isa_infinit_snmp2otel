@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
         auto values = client.get(oids);
         if (!values.empty()) {
             for (const auto& [oid, val] : values) {
-                std::cout << oid << " = " << val.strVal << std::endl;
+                std::cout << oid << " = " << val.value << std::endl;
             }
             exporter.export_gauge(values, mapping);
         } else {

@@ -7,7 +7,7 @@
 class OTELExporter {
 public:
     OTELExporter(const std::string &endpoint, bool verbose=false);
-    bool export_gauge(const std::map<std::string, SNMPValue> &values,
+    bool export_gauge(const std::map<std::string, SNMPResult> &values,
                       const std::map<std::string, OIDInfo> &mapping);
 private:
     std::string endpoint_;
