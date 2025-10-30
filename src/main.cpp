@@ -7,11 +7,12 @@
 #include <thread>
 #include <chrono>
 
+
 volatile bool g_run = true;
 void sigint_handler(int) { g_run = false; }
 
 void usage() {
-    std::cerr << "Usage: snmp2otel -t target [-C community] -o oids_file -e endpoint [-i interval] [-r retries] [-T timeout] [-p port] [-v]\n";
+    std::cerr << "Usage: snmp2otel -t target [-C community] -o oids_file -e endpoint [-i interval] [-r retries] [-T timeout] [-p port] [-v] [-m] mapping_file\n";
 }
 
 int main(int argc, char **argv) {
@@ -24,9 +25,11 @@ int main(int argc, char **argv) {
     int timeout_ms = 1000;
     int port = 161;
     bool verbose = false;
+    std::string mapping_file;
+
 
     int opt;
-    while ((opt = getopt(argc, argv, "t:C:o:e:i:r:T:p:vh")) != -1) {
+    while ((opt = getopt(argc, argv, "t:C:o:e:i:r:T:p:m:vh")) != -1) {
         switch (opt) {
             case 't': target = optarg; break;
             case 'C': community = optarg; break;
@@ -36,6 +39,7 @@ int main(int argc, char **argv) {
             case 'r': retries = atoi(optarg); break;
             case 'T': timeout_ms = atoi(optarg); break;
             case 'p': port = atoi(optarg); break;
+            case 'm': mapping_file = optarg; break;
             case 'v': verbose = true; break;
             default: usage(); return 1;
         }
@@ -51,8 +55,11 @@ int main(int argc, char **argv) {
         std::cerr << "[ERROR] No OIDs loaded from " << oids_file << "\n";
         return 1;
     }
-    // mapping optional (not implemented): pass empty mapping
+   
     std::map<std::string, OIDInfo> mapping;
+    if(!mapping_file.empty()) {
+        mapping = load_oids_info(mapping_file);
+    }
 
     SNMPClient client(target, port, community, timeout_ms, retries, verbose);
     OTELExporter exporter(endpoint, verbose);
@@ -61,9 +68,6 @@ int main(int argc, char **argv) {
         if (verbose) std::cout << "[INFO] Starting poll cycle\n";
         auto values = client.get(oids);
         if (!values.empty()) {
-            for (const auto& [oid, val] : values) {
-                std::cout << oid << " = " << val.value << std::endl;
-            }
             exporter.export_gauge(values, mapping);
         } else {
             if (verbose) std::cout << "[WARNING] No values returned in this cycle\n";

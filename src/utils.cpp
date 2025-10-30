@@ -4,7 +4,7 @@
 #include <chrono>
 #include <algorithm>
 #include <iostream>
-
+#include <nlohmann/json.hpp>
 
 
 std::vector<std::string> load_oids_file(const std::string &path) {
@@ -24,13 +24,31 @@ std::vector<std::string> load_oids_file(const std::string &path) {
     return oids;
 }
 
-// Minimal JSON mapping stub (no external libs). Expects exact format with simple fields.
-// If the file is missing or invalid, return empty map.
-#include <cstdio>
-std::map<std::string, OIDInfo> load_mapping_json(const std::string &path) {
-    // For safety: return empty - implement later if needed
-    (void)path;
-    return {};
+
+std::map<std::string, OIDInfo> oad_oids_info(const std::string &file) {
+    std::map<std::string, OIDInfo> mapping;
+    std::ifstream map_file(file);
+    if (!in) {
+        std::cerr << "[ERROR] Cannot open mapping file: " << file << "\n";
+        return false;
+    }
+
+    nlohmann::json j;
+    try {
+        map_file >> j;
+    } catch () {
+        std::cerr << "[ERROR] Invalid JSON in mapping file\n";
+        return false;
+    }
+
+    for (auto &item : j.items()) {
+        OIDInfo info;
+        info.name = item.value().value("name", it.key()); 
+        info.unit = item.value().value("unit", "");
+        info.type = item.value().value("type", "gauge");
+        mapping[item.key()] = info;
+    }
+    return mapping;
 }
 
 uint64_t now_unix_nano() {
@@ -43,7 +61,6 @@ std::string oid_to_name(const std::string &oid, const std::map<std::string, OIDI
     if (it != mapping.end() && !it->second.name.empty()) return it->second.name;
     return "snmp." + oid;
 }
-
 
 std::string getOIDtoString(netsnmp_variable_list * vars) {
     std::string oid;
