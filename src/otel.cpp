@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 OTELExporter::OTELExporter(const std::string &endpoint, bool verbose)
 : endpoint_(endpoint), verbose_(verbose) {}
@@ -73,47 +74,57 @@ bool OTELExporter::http_post(const std::string &host, int port, const std::strin
     return false;
 }
 
-bool OTELExporter::export_gauge(const std::map<std::string, SNMPResult> &values,
-                                const std::map<std::string, OIDInfo> &mapping) {
-    // Build OTLP/HTTP JSON (minimal)
+bool OTELExporter::export_gauge(
+    const std::map<std::string, SNMPResult> &values,
+    const std::map<std::string, OIDInfo> &mapping) 
+{
     uint64_t ts = now_unix_nano();
-    std::ostringstream body;
-    body << "{ \"resourceMetrics\": [ { \"resource\": {}, \"scopeMetrics\": [ { \"scope\": {}, \"metrics\": [";
-    bool firstMetric = true;
+    nlohmann::json metrics = nlohmann::json::array();
+
     for (const auto &kv : values) {
-        std::string oid = kv.first;
+        const std::string &oid = kv.first;
         const SNMPResult &v = kv.second;
-        std::string name = oid_to_name(oid, mapping);
-        if (!firstMetric) body << ", ";
-        firstMetric = false;
-        body << "{ \"name\": \"" << name << "\", \"unit\": \"\", \"gauge\": { \"dataPoints\": [ {";
-        if (v.value) {
-            body << "\"asInt\": " << v.value << ", ";
-        } else {
-            // try to interpret string as number
-            long long maybe = 0;
-            bool isnum = true;
-            try {
-                
-            } catch (...) { isnum = false; }
-            if (isnum) body << "\"asInt\": " << maybe << ", ";
-            else body << "\"asDouble\": 0, ";
-        }
-        body << "\"timeUnixNano\": " << ts;
-        body << "} ] } }";
+
+        const auto item = mapping.find(oid);
+        std::string name = (item != mapping.end()) ? item->second.name : oid;
+        std::string unit = (item != mapping.end()) ? item->second.unit : "";
+
+        nlohmann::json dp; // datapoint
+        dp["timeUnixNano"] = ts;
+        dp["Int"] = v.value; // integer value
+
+        nlohmann::json metric;
+        metric["name"] = name;
+        metric["unit"] = unit;
+        metric["gauge"]["dataPoints"] = nlohmann::json::array({dp});
+
+        metrics.push_back(metric);
     }
-    body << "] } ] } ] }";
+
+    nlohmann::json body;
+    body["resourceMetrics"] = {
+        {
+            {"resource", {}},
+            {"scopeMetrics", {{
+                {"scope", {}},
+                {"metrics", metrics}
+            }}}
+        }
+    };
+
+    std::string body_str = body.dump(); // compact JSON string
+
+    if (verbose_) std::cout << "[DEBUG] OTLP JSON:\n" << body.dump(2) << "\n";
+
     std::string host; int port; std::string path;
-    std::cerr << body.str() << std::endl;
     if (!parse_endpoint(endpoint_, host, port, path)) {
-        if (verbose_) std::cerr << "[ERROR] Unsupported endpoint format\n";
+       if(verbose_) std::cerr << "[ERROR] Unsupported endpoint format\n";
         return false;
     }
-    bool ok = http_post(host, port, path, body.str());
-    if (!ok) {
-        if (verbose_) std::cerr << "[ERROR] OTEL export failed for endpoint " << endpoint_ << "\n";
-    } else {
-        if (verbose_) std::cout << "[INFO] OTEL export succeeded, sent " << values.size() << " metrics\n";
-    }
+
+    bool ok = http_post(host, port, path, body_str);
+    if (!ok)
+        if (verbose_) std::cerr << "[ERROR] Export failed for endpoint " << endpoint_ << "\n";
+
     return ok;
 }
