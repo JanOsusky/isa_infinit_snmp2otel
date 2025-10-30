@@ -52,15 +52,15 @@ int main(int argc, char **argv) {
 
     std::vector<std::string>  oids = load_oids_file(oids_file);
     if (oids.empty()) {
-        std::cerr << "[ERROR] No OIDs loaded from " << oids_file << "\n";
+        if(verbose) std::cerr << "[ERROR] No OIDs loaded from " << oids_file << "\n";
         return 1;
     }
    
     std::map<std::string, OIDInfo> mapping;
     if(!mapping_file.empty()) {
-        mapping = load_oids_info(mapping_file);
+        mapping = load_oids_info(mapping_file, verbose);
     }
-
+    
     SNMPClient client(target, port, community, timeout_ms, retries, verbose);
     OTELExporter exporter(endpoint, verbose);
 

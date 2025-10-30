@@ -38,7 +38,7 @@ std::map<std::string, SNMPResult> SNMPClient::get(const std::vector<std::string>
     
     ss_ = snmp_open(&session_); 
     if (!ss_) {
-        snmp_perror("[ERROR] SNMP session could not be opened\n");
+        if(verbose_)  snmp_perror("[ERROR] SNMP session could not be opened\n");
         return out; // TODO: verify
     }
     pdu_ = snmp_pdu_create(SNMP_MSG_GET); // Creating pdu for get request
@@ -47,19 +47,19 @@ std::map<std::string, SNMPResult> SNMPClient::get(const std::vector<std::string>
         anOID_len_ = MAX_OID_LEN;
         if (oid.size() >= 2 && oid.substr(oid.size() - 2) == ".0") { // Filtering all non-scalar OIDs out
             if(!read_objid(oid.c_str(), anOID_, &anOID_len_)){
-                std::cerr << "[ERROR] Failed to convert OID: " << oid << std::endl;
+                if(verbose_) std::cerr << "[ERROR] Failed to convert OID: " << oid << std::endl;
                 continue;
             } 
             if(!snmp_add_null_var(pdu_, anOID_,anOID_len_)){ // Adding oid to the PDU
-                std::cerr << "[ERROR] Failed to add OID " << oid << " to the PDU.\n";
+                if(verbose_) std::cerr << "[ERROR] Failed to add OID " << oid << " to the PDU.\n";
             } 
         } else {
-            std::cerr << "[WARNING] OID: " << oid << " is not supported. Only scalar OID ending with .0 are.\n"; 
+            if(verbose_) std::cerr << "[WARNING] OID: " << oid << " is not supported. Only scalar OID ending with .0 are.\n"; 
         }
     }
     // Send the request out
     status_ = snmp_synch_response(ss_, pdu_,  &response_);
-    std::cout << "[INFO] SNMP request send to " << session_.peername << ".\n";
+    if(verbose_) std::cout << "[INFO] SNMP request send to " << session_.peername << ".\n";
     // Reply analysis
     if (status_ == STAT_SUCCESS && response_->errstat == SNMP_ERR_NOERROR) { 
 
@@ -75,14 +75,14 @@ std::map<std::string, SNMPResult> SNMPClient::get(const std::vector<std::string>
             out[oid] = result;
             std::cout << oid << std::endl;
             } else {
-                std::cerr << "[WARNING] The OID " << get_oid_to_string(vars_) << " is not of type GAUGE. Other types are not supported.\n";
+                if(verbose_) std::cerr << "[WARNING] The OID " << get_oid_to_string(vars_) << " is not of type GAUGE. Other types are not supported.\n";
             }
         }
 
         return out; 
     }
     else {
-        std::cerr << "[ERROR] SNMP request failed.\n";
+        if(verbose_) std::cerr << "[ERROR] SNMP request failed.\n";
         return out; 
     }
 }

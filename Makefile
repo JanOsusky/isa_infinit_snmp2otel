@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -g -O0 -Wall -Wextra -I/opt/homebrew/include
+CXXFLAGS = -std=c++17 -g -O0 -Wall -Wextra -I/opt/homebrew/include -Iinclude
 LDFLAGS = -L/opt/homebrew/lib -lnetsnmp -lnetsnmpagent -lnetsnmpmibs
 SRC_DIR = src
 SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/snmp.cpp $(SRC_DIR)/otel.cpp $(SRC_DIR)/utils.cpp

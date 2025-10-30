@@ -25,25 +25,25 @@ std::vector<std::string> load_oids_file(const std::string &path) {
 }
 
 
-std::map<std::string, OIDInfo> oad_oids_info(const std::string &file) {
+std::map<std::string, OIDInfo> load_oids_info(const std::string &file,bool verbose) {
     std::map<std::string, OIDInfo> mapping;
     std::ifstream map_file(file);
-    if (!in) {
-        std::cerr << "[ERROR] Cannot open mapping file: " << file << "\n";
-        return false;
+    if (!map_file) {
+        if (verbose) std::cerr << "[ERROR] Cannot open mapping file: " << file << "\n";
+        return mapping;
     }
 
     nlohmann::json j;
     try {
         map_file >> j;
-    } catch () {
-        std::cerr << "[ERROR] Invalid JSON in mapping file\n";
-        return false;
+    } catch (...) {
+        if (verbose) std::cerr << "[ERROR] Invalid JSON in mapping file\n";
+        return mapping;
     }
 
     for (auto &item : j.items()) {
         OIDInfo info;
-        info.name = item.value().value("name", it.key()); 
+        info.name = item.value().value("name", item.key()); 
         info.unit = item.value().value("unit", "");
         info.type = item.value().value("type", "gauge");
         mapping[item.key()] = info;
@@ -62,7 +62,7 @@ std::string oid_to_name(const std::string &oid, const std::map<std::string, OIDI
     return "snmp." + oid;
 }
 
-std::string getOIDtoString(netsnmp_variable_list * vars) {
+std::string get_oid_to_string(netsnmp_variable_list * vars) {
     std::string oid;
     for(size_t i = 0; i < vars->name_length; i++)
     {

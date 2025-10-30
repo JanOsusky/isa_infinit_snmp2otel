@@ -15,7 +15,8 @@
                 "-r", "2",
                 "-T", "3",
                 "-p", "1024",
-                "-v"
+                "-v",
+                "-m", "mapping.json",
             ],
             "cwd": "${workspaceFolder}",
             "stopOnEntry": false,
