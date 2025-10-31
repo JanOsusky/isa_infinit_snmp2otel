@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <iostream>
+#include <httplib.h>
 #include <nlohmann/json.hpp>
 
 OTELExporter::OTELExporter(const std::string &endpoint, bool verbose)
@@ -30,7 +31,7 @@ bool OTELExporter::parse_endpoint(const std::string &endpoint, std::string &host
     }
     return true;
 }
-
+/*
 bool OTELExporter::http_post(const std::string &host, int port, const std::string &path, const std::string &body) {
     struct addrinfo hints{}, *res=nullptr;
     hints.ai_family = AF_UNSPEC;
@@ -72,6 +73,30 @@ bool OTELExporter::http_post(const std::string &host, int port, const std::strin
     }
     close(sock); freeaddrinfo(res);
     return false;
+}
+*/
+bool OTELExporter::http_post(const std::string &host, int port,
+                             const std::string &path,
+                             const std::string &body) {
+
+    httplib::Client cli(host, port);
+    cli.set_keep_alive(false);
+
+    auto res = cli.Post(path.c_str(),
+                        body,
+                        "application/json");
+
+    if (!res) {
+        if (verbose_) std::cerr << "[ERROR] HTTP request failed (network)\n";
+        return false;
+    }
+
+    if (verbose_) {
+        std::cout << "[DEBUG] HTTP status: " << res->status << "\n";
+        std::cout << "[DEBUG] Response: " << res->body << "\n";
+    }
+
+    return (res->status >= 200 && res->status < 300);
 }
 
 bool OTELExporter::export_gauge(
