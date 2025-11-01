@@ -31,50 +31,7 @@ bool OTELExporter::parse_endpoint(const std::string &endpoint, std::string &host
     }
     return true;
 }
-/*
-bool OTELExporter::http_post(const std::string &host, int port, const std::string &path, const std::string &body) {
-    struct addrinfo hints{}, *res=nullptr;
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    int rc = getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints, &res);
-    if (rc!=0) { if (verbose_) std::cerr << "[ERROR] getaddrinfo: " << gai_strerror(rc) << "\n"; return false; }
-    int sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (sock < 0) { freeaddrinfo(res); if (verbose_) perror("socket"); return false; }
-    if (connect(sock, res->ai_addr, res->ai_addrlen) < 0) { freeaddrinfo(res); close(sock); if (verbose_) perror("connect"); return false; }
-    std::ostringstream req;
-    req << "POST " << path << " HTTP/1.1\r\n";
-    req << "Host: " << host << "\r\n";
-    req << "User-Agent: snmp2otel/1.0\r\n";
-    req << "Content-Type: application/json\r\n";
-    req << "Content-Length: " << body.size() << "\r\n";
-    req << "Connection: close\r\n\r\n";
-    req << body;
-    std::string reqs = req.str();
-    ssize_t sent = send(sock, reqs.data(), reqs.size(), 0);
-    if (sent < 0) { if (verbose_) perror("send"); close(sock); freeaddrinfo(res); return false; }
-    // read response (but don't need full body)
-    char buf[4096];
-    ssize_t r = recv(sock, buf, sizeof(buf)-1, 0);
-    if (r <= 0) { if (verbose_) perror("recv"); close(sock); freeaddrinfo(res); return false; }
-    buf[r]=0;
-    std::string resp(buf);
-    if (verbose_) std::cerr << "[DEBUG] HTTP response start: " << resp.substr(0, std::min<size_t>(resp.size(),200)) << "\n";
-    // parse status code
-    if (resp.rfind("HTTP/1.",0)==0) {
-        size_t sp = resp.find(' ');
-        if (sp!=std::string::npos) {
-            size_t sp2 = resp.find(' ', sp+1);
-            if (sp2!=std::string::npos) {
-                int code = atoi(resp.substr(sp+1, sp2-sp-1).c_str());
-                close(sock); freeaddrinfo(res);
-                return (code >= 200 && code < 300);
-            }
-        }
-    }
-    close(sock); freeaddrinfo(res);
-    return false;
-}
-*/
+
 bool OTELExporter::http_post(const std::string &host, int port,
                              const std::string &path,
                              const std::string &body) {
